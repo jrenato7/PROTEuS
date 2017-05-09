@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="PROTein Engineering Supporter">
+    <meta name="author" content="jose.renato77@gmail.com">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.png') }}" sizes="32x32" type="image/png"/>
+    <title>PROTEuS | PROTein Engineering Supporter</title>
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <link href="{{ url_for('static', filename='css/ie10-viewport-bug-workaround.css') }}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='js/angularjs/ui-bootstrap-custom-build/ui-bootstrap-custom-1.1.1-csp.css') }}" rel="stylesheet">
+
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src={{ url_for('static', filename='static/js/ie8-responsive-file-warning.js') }}></script><![endif]-->
+    <script src="{{ url_for('static', filename='js/ie-emulation-modes-warning.js') }}"></script>
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+
+    <nav class="navbar navbar-inverse navbar-fixed-top bg-gradient-9">
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="/"><img src="{{ url_for('static', filename='img/proteus_logo.svg') }}" /></a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="/#runnow">Run now</a></li>
+            <li><a href="/#about">About</a></li>
+            <!--<li><a href="/#contact">Contact</a></li>-->
+          </ul>
+        </div><!--/.navbar-collapse -->
+      </div>
+    </nav>
+
+    <!-- Main jumbotron for a primary marketing message or call to action -->
+    <div class="jumbotron">
+      <div class="container">
+        <h2 class="title_h2">{{title}}</h2>
+        <p>{{subtitle}} &#8491;</p>
+      </div>
+    </div>
+
+    <div class="container">
+      <!-- Example row of columns -->
+      <div calss="row">
+            {% for message in get_flashed_messages() %}
+            <div class="col-md-12 alert bg-warning msg" role="alert">
+                <p class="text-center">
+                    <strong>{{ message }}</strong>
+                </p>
+            </div>
+            {% endfor %}
+      </div>
+      <div class="row">
+<div ng-app="proEngApp">
+<div class="col-md-12"  ng-controller="proEngController">
+    <div class="col-md-12 alert alert-success msg" ng-if="p_status" role="alert">
+        <p class="text-center">
+            <strong>Protein processing is over!</strong>
+        </p>
+    </div>
+    <div class="col-md-12" ng-if="cttlok">
+        <!--<h2>Mutation Found</h2>-->
+        <div class="table-responsive">
+            <table class="table table-striped table-condensed table-hover">
+                <thead>
+                <tr>
+                    <th>Sites</th>
+                    <th>Mutation Allowed</th>
+                </tr>
+                </thead>
+                <tbody>
+                    <tr  ng-repeat="cttl in contactsList">
+                        <td>[[cttl.site]]</td>
+                        <td>
+                            <ul class="list-inline">
+                                <li ng-repeat="ctm in cttl.mutations">
+                                    <a href="" ng-click="scrollTo([[ctm.link]])">[[ctm.mutation]]</a>
+                                </li>
+                            </ul>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-md-12" ng-if="contacts">
+        <h2> Details</h2>
+        <div class="table-responsive" ng-repeat="ctt in contacts" id="[[ctt.id]]">
+            <h4 class="sub-header">[[ctt.title]]</h4>
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Contact Type</th>
+                    <th>PDB ID</th>
+                    <th>Chain</th>
+                    <th>R1</th>
+                    <th>R2</th>
+                    <th>Score (RMSD)</th>
+                    <th>Preview</th>
+                </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="ctr in ctt.contacts">
+                        <td id="[[ctr.pdbid]][[ctr.r1]][[ctr.r2]]">[[ctr.type]]</td>
+                        <td>
+                            <a href="http://www.rcsb.org/pdb/explore.do?structureId=[[ctr.pdbid]]" target="_blank">
+                            [[ctr.pdbid]]
+                            </a>
+                        </td>
+                        <td>[[ctr.chain]]</td>
+                        <td>[[ctr.r1]]</td>
+                        <td>[[ctr.r2]]</td>
+                        <td>[[ctr.score]]</td>
+                        <td> <button type="button" class="btn btn-primary" ng-click="show([[ctr.alid]], [[ctt.title]], [[ctr.r1]], [[ctr.r2]])">Show</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+<script type="text/ng-template" id="myModalContent.html">
+            <div class="modal-header">
+                <h4 class="modal-title">
+                    Wild <span class='text-success'>[[wild]]</span>, suggested mutation <span class='text-primary'>[[mutation]]</span>
+                </h4>
+            </div>
+            <div class="modal-body">
+                <div ng-if="alignok" class="modal-body alert-danger">
+                    <p>Something got wrong, sorry!</p>
+                    <!--<p>Something wrong is not right!</p>-->
+                </div>
+
+                <div id="showaligncontent" class='mol-container'></div>
+            </div>
+
+    <div class="modal-footer">
+        <a href="[[download]]" class="btn btn-primary" type="button">Download</a>
+        <button class="btn btn-danger" type="button" ng-click="cancel()">Close</button>
+    </div>
+</script>
+
+
+
+<script src="{{ url_for('static', filename='js/angularjs/1.4.9/angular.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/angularjs/ui-bootstrap-custom-build/ui-bootstrap-custom-1.1.1.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/angularjs/ui-bootstrap-custom-build/ui-bootstrap-custom-tpls-1.1.1.min.js') }}"></script>
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="{{ url_for('static', filename='js/jquery/1.12.4/jquery.min.js') }}"></script>
+<!--<script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>-->
+<script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+<!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+<script src="{{ url_for('static', filename='js/ie10-viewport-bug-workaround.js') }}"></script>
+<script src="{{ url_for('static', filename='js/3Dmol-min.js') }}"></script>
+
+<script src="{{ url_for('static', filename='js/proeng.js') }}"></script>
+
+<script>
+
+</script>
+    <div class="col-md-12 alert alert-warning msg" role="alert">
+        <p class="text-center">
+            <strong>You can access this page any time using this link: <a href='[[linkacess]]'>[[linkacess]]</a> </strong>
+        </p>
+    </div>
+</div>
+
+</div>
+    </div>
+      <hr>
+    </div> <!-- /container -->
+    <link href="{{ url_for('static', filename='vendor/font-awesome/css/font-awesome.min.css') }}" rel="stylesheet" type="text/css">
+      <footer class="text-center">
+        <div class="footer-above">
+            <div class="container">
+                <div class="row">
+                    <div class="footer-col col-md-4">
+                        <h3>Location</h3>
+                        <p>Av. Antônio Carlos 6627 - Prédio do ICEx - sala 4340 - Pampulha - CEP 31270-010 | Belo Horizonte - Minas Gerais - Brasil - Telefone: +55 31 3409-5896
+                        </p>
+                    </div>
+                    <div class="footer-col col-md-4">
+                        <h3>Around the Web</h3>
+                        <ul class="list-inline">
+                            <!--<li>
+                                <a href="#" class="btn-social btn-outline"><span class="sr-only">Facebook</span><i class="fa fa-fw fa-facebook"></i></a>
+                            </li>
+                            <li>
+                                <a href="#" class="btn-social btn-outline"><span class="sr-only">Google Plus</span><i class="fa fa-fw fa-google-plus"></i></a>
+                            </li>-->
+                            <li>
+                                <a href="https://twitter.com/lbs_dcc_ufmg" class="btn-social btn-outline"><span class="sr-only">Twitter</span><i class="fa fa-fw fa-twitter"></i></a>
+                            </li>
+                            <!--<li>
+                                <a href="#" class="btn-social btn-outline"><span class="sr-only">Linked In</span><i class="fa fa-fw fa-linkedin"></i></a>
+                            </li>
+                            <li>
+                                <a href="#" class="btn-social btn-outline"><span class="sr-only">Dribble</span><i class="fa fa-fw fa-dribbble"></i></a>
+                            </li>-->
+                        </ul>
+                    </div>
+                    <div class="footer-col col-md-4">
+                        <h3>PROTEuS PUBLICATIONS</h3>
+                        <p>Our work is available on <a href="#about">...</a>.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-below">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12">
+                        Copyright &copy; PROTEuS by <a href="http://www.lbs.dcc.ufmg.br/">LBS</a> 2017
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+  </body>
+</html>

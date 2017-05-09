@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="col-md-12">
+    <div class="row">
+        <div class="col-md-4">
+            <img alt="Type off contact" src="{{ url_for('static', filename='img/img_contact2.png') }}" class="img-rounded" />
+            <p>
+                Apresentamos o PROENG, uma base de dados de conformações de
+                contatos instra-cadeia e sua vizinhança, que visa propor mutações
+                pontuais em pares de resíduos envolvidos em uma interação, através
+                de alinhamentos estruturais entre os resíduos envolvidos no contato
+                e seus vizinhos (considerando a sequência da cadeia da proteína).
+                Este site possibilita a interação com a base de dados.
+
+
+            </p>
+        </div>
+        <div class="col-md-8">
+            {% from "_formhelpers.html" import render_field %}
+            <form role="form" method="post" enctype="multipart/form-data" class="form-horizontal">
+                {{ render_field(form.pdbfile) }}
+                {{ render_field(form.cutoff) }}
+                <button type="submit" class="btn btn-default">
+                    Calculate
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
