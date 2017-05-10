@@ -18,13 +18,13 @@ class GenerateContactsPdbFile:
         self.messages = []
 
         # Residues with neighborhood measure equal to neighborhood_size
-        self.res_full_neighbours = [] # [20, 32, 35, 187,...]
+        self.res_full_neighbours = []  # [20, 32, 35, 187,...]
 
         # Ids of residues that are in contact:
-        self.contacts = [] # [(49, 178), (20, 78), ...]
+        self.contacts = []  # [(49, 178), (20, 78), ...]
         # dict of residues where the keys is the residue id and the
         # value is a tuple with residue name and  the atoms of main chain.
-        self.residues = {} # {10: ('SER', [Atom, Atom, Atom, Atom]), ...}
+        self.residues = {}  # {10: ('SER', [Atom, Atom, Atom, Atom]), ...}
         self.set_atoms_of_residue()
         self.set_residue_full_neighborhood()
         self.set_contacts()
@@ -85,7 +85,8 @@ class GenerateContactsPdbFile:
         for c in self.pdb_file.get_chains():
             if c.id == self.chain:
                 self.chain = c
-        if isinstance(self.chain, str):
+                break
+        if isinstance(self.chain, basestring):
             msg = 'Chain {} not found! We used the model 0 instead.'
             self.messages.append(msg.format(self.chain))
             self.chain = self.pdb_file[0]

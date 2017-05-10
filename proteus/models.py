@@ -88,7 +88,7 @@ class AtomProeng(Base):
     element = Column(String(10))
     serial_number = Column(Integer)
     fullname = Column(String(10))
-    coord = Column(String(25))
+    coord = Column(String(30))
     type = Column(Integer)
 
     def __init__(self, id_c, seq, nm, lv, bf, oc, el, sn, fn, co, tp=1):
