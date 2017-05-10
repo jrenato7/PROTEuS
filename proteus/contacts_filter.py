@@ -182,15 +182,25 @@ def calc_neighborhood(residue_id, neighborhood_size):
 def prepare_res_align_aux(r, gc):
     # type (int, GenerateContactsPdbFile) -> list
     full_n = gc.get_neighborhood_residue(r)
-    return [gc.residues[fn][1] for fn in full_n]
+    lst = []
+    for fn in full_n:
+        if fn == r:
+            lst.append(gc.residues[fn][1])
+        else:
+            tmp = []
+            for rngb in gc.residues[fn][1]:
+                if rngb['name'] in MAINCHAIN:
+                    tmp.append(rngb)
+            lst.append(tmp)
+    return lst
 
 
 def prepare_res_align(gc):
     # type (GenerateContactsPdbFile) -> dict
     """
     :param gc: object of GenerateContactsPdbFile class.
-    :return:dict key = residue_id; value = list of atoms of
-    triple. [[Atom N, Atom CA, Atom C, Atom O], [Atom N,
+    :return:dict key = residue_id; value = list atoms of triple.
+    [[Atom N, Atom CA, Atom C, Atom O], [Atom N,
     Atom CA, Atom C, Atom O], [Atom N, Atom CA, Atom C,
     Atom O]]
     """

@@ -89,8 +89,9 @@ class AtomProeng(Base):
     serial_number = Column(Integer)
     fullname = Column(String(10))
     coord = Column(String(25))
+    type = Column(Integer)
 
-    def __init__(self, id_c, seq, nm, lv, bf, oc, el, sn, fn, co):
+    def __init__(self, id_c, seq, nm, lv, bf, oc, el, sn, fn, co, tp=1):
         self.id_ctt = id_c
         self.sequence = seq
         self.name = nm
@@ -101,6 +102,7 @@ class AtomProeng(Base):
         self.serial_number = sn
         self.fullname = fn
         self.coord = co
+        self.type = tp
 
 
 class AlignProeng(Base):
@@ -174,7 +176,7 @@ def store_contacts(gc, id_p):
         ct_name = RESIDUEDICT[rn1_ct] + str(ctt[0]) + '-'
         ct_name += RESIDUEDICT[rn2_ct] + str(ctt[1])
         # ctt_type = rn1_ct + '-' + rn2_ct
-        c = Contact(id_p, ct_name, 0, gc.chain, ctt[0])
+        c = Contact(id_p, ct_name, 0, str(gc.chain.id), ctt[0])
         db_session.add(c)
         db_session.commit()
 
@@ -184,9 +186,10 @@ def store_contacts(gc, id_p):
         for c1 in lp:
             f1 += copy.deepcopy(c1)
         for i, f in enumerate(f1):
+            tpa = 1 if f['name'] in MAINCHAIN else 0
             a = AtomProeng(c.id_ctt, i, f['name'], f['level'], f['bfactor'],
                            f['occupancy'], f['element'], f['serial_number'],
-                           f['fullname'], f['coord'])
+                           f['fullname'], f['coord'], tpa)
             db_session.add(a)
         db_session.commit()
 

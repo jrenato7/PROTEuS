@@ -3,8 +3,7 @@
 import os
 import traceback
 from flask import Flask
-from flask import request, render_template, flash, redirect, url_for, \
-    abort, json
+from flask import request, render_template, flash, redirect, url_for, json
 from flask_mail import Mail
 from werkzeug.utils import secure_filename
 from jinja2 import TemplateNotFound
@@ -60,7 +59,9 @@ def index():
             prc = Processing(user_id, pdb_name, cutoff, url)
             db_session.add(prc)
             db_session.commit()
-            gc = GenerateContactsPdbFile(fs)
+            gc = GenerateContactsPdbFile(fs, chain=form.chain.data)
+            for m in gc.messages:
+                flash(m)
             store_contacts(gc, prc.id_p)
             send_mail_process_start(mail, user.email, user.name, prc.url,
                                     prc.pdbid, prc.cutoff, request.url)
