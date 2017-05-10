@@ -10,7 +10,6 @@ FROM = 'proteus.lbs@gmail.com'
 
 
 def send_mail_process_start(mail, to, name, pid, pdbid, cuttoff, url):
-    print to, name, pid, pdbid, cuttoff, url
     subject = "Process of %s Started in PROTEuS" % (pdbid)
     subject = subject.encode("utf-8")
     snd = ('PROTEuS Team'.encode("utf-8"), FROM.encode("utf-8"))

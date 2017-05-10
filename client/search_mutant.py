@@ -8,12 +8,18 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from search_db_model_base import AtomSearchBase, ResidueContactSearchBase
 from proeng_model_base import ProcessingProeng, ContactProeng, AtomProeng, \
-    AlignProeng, AtomAlignProeng
+    AlignProeng, AtomAlignProeng, UserProeng
 from Bio.PDB import Superimposer
 from multiprocessing import Pool
-# from time import sleep
+from email.mime.text import MIMEText
 import traceback
 import copy
+import smtplib
+import sys
+import os
+
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 eng = 'mysql://root:root@127.0.0.1/proeng'
 engine = create_engine(eng, convert_unicode=True)
@@ -67,7 +73,8 @@ def get_atoms_search_db(gf, ct_id):
 
 def get_atoms_contact_proeng(ct_id):
     atms = g.query(AtomProeng).filter(AtomProeng.id_ctt == ct_id)\
-            .order_by(AtomProeng.serial_number).all()
+            .filter(AtomProeng.type == 1)\
+            .order_by(AtomProeng.serial_number)
     atm_list = []  # lista de átomos com objetos da classe Bio.PDB.Atom.Atom
     for atm in atms:
         atom_parsed = parser_atom(atm)
@@ -81,10 +88,8 @@ def get_atoms_contact_proeng(ct_id):
 def update_contact(ct_id):
     global CTT_UPDATED
     if not CTT_UPDATED:
-        print "CTT_UPDATED "
-        stmt = g.query(ContactProeng)\
-                .filter(ContactProeng.id_ctt == ct_id)\
-                .update({ContactProeng.ctt_status: 1})
+        g.query(ContactProeng).filter(ContactProeng.id_ctt == ct_id)\
+         .update({ContactProeng.ctt_status: 1})
         CTT_UPDATED = True
 
 
@@ -94,10 +99,41 @@ def update_process():
         total = g.query(func.count(ContactProeng.id_ctt))\
                  .filter(ContactProeng.ctt_status == 0).scalar()
         if total == 0:
-            stmt = g.query(ProcessingProeng)\
-                .filter(ProcessingProeng.id_p == p.id_p)\
-                .update({ProcessingProeng.status: 1})
-            # send mail to user
+            usr = g.query(UserProeng).filter(UserProeng.id_u == p.id_u).first()
+            #try:
+            send_mail_process_finish(usr.name, usr.email, p.pdbid, p.url)
+            #except:
+            #    print "Error send mail user"
+            g.query(ProcessingProeng).filter(ProcessingProeng.id_p == p.id_p)\
+             .update({ProcessingProeng.status: 1,
+                      ProcessingProeng.notification_user: 1})
+
+
+def send_mail_process_finish(name, mail, prt, pid):
+    fromaddr = "PROTEuS Team <proteus.lbs@gmail.com>"
+    msg = MIMEMultipart()
+    msg['From'] = fromaddr
+    msg['To'] = mail
+    msg['Subject'] = "Process of {} Finished!".format(prt)
+
+    html = '''<p>Dear <strong>{0}</strong>,</p>
+<p>Searching for compatible contacts is finished.</p>
+<p>To see the job result, access the following link:
+<a href="http://proteus.dcc.ufmg.br/result/{1}">
+http://proteus.dcc.ufmg.br/result/{1}</a>.</p>
+<p>Best regards, PROTEuS Team.</p>
+<img src='http://proteus.dcc.ufmg.br/static/img/proteus_footer.png'
+class="rounded mx-auto d-block" >
+'''.format(name.decode("utf-8"), pid)
+
+    msg.attach(MIMEText(html, 'html'))
+
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.starttls()
+    server.login('proteus.lbs@gmail.com', os.environ.get('MAIL_PASSWORD', ''))
+    text = msg.as_string()
+    server.sendmail(fromaddr, mail, text)
+    server.quit()
 
 
 def process_contacts(lst):
@@ -120,9 +156,10 @@ def process_contacts(lst):
         si.set_atoms(f1, f2)
         si.apply(f2)
         if si.rms < cutoff:
+            r, t = si.rotran
             cont += 1
             new_alg = AlignProeng(ct_id, id_ctt, si.rms, tp_ins,
-                                  pd, ch, r1, r2)
+                                  pd, ch, r1, r2, r.dumps(), t.dumps())
             g.add(new_alg)
             g.commit()
             id_align = new_alg.id_alg
@@ -183,36 +220,33 @@ def seach_mutant_aux(elm, num_cores):
                     f1 = copy.deepcopy(elm[3])
                     lstpro = [cutoff, tp_ins, ct_id, f1] + list(el)
                     lst_proc.append(lstpro)
-                # print "List_proc", lst_proc
                 pl = Pool(num_cores)
                 ret = pl.map(process_contacts, lst_proc)
-                # print ret, len(ret)
                 pl.close()
                 pl.terminate()
+                t = 0
                 try:
                     t = ret.index(1)
                     cont += t + 1
-                    print "count + 1"
                 except:
-                    # print "count 0"
                     cont += 0
+                if t != 0:
+                    break
+
     if cont == 0:
-        stmt = g.query(ContactProeng)\
-                .filter(ContactProeng.id_ctt == ct_id)\
-                .update({ContactProeng.ctt_status: -1})
+        g.query(ContactProeng).filter(ContactProeng.id_ctt == ct_id)\
+         .update({ContactProeng.ctt_status: -1})
     else:
-        stmt = g.query(ContactProeng)\
-                .filter(ContactProeng.id_ctt == ct_id)\
-                .update({ContactProeng.ctt_status: 2})
+        g.query(ContactProeng).filter(ContactProeng.id_ctt == ct_id)\
+         .update({ContactProeng.ctt_status: 2})
 
 
 def search_mutant_db(num_cores):
     ct = g.query(ContactProeng).filter(ContactProeng.ctt_status == 0)\
-          .order_by(ContactProeng.ctt_type).first()
+          .order_by(ContactProeng.ctt_sequence).first()
     if ct:
-        stmt = g.query(ContactProeng)\
-                .filter(ContactProeng.id_ctt == ct.id_ctt)\
-                .update({ContactProeng.ctt_status: 3})
+        g.query(ContactProeng).filter(ContactProeng.id_ctt == ct.id_ctt)\
+         .update({ContactProeng.ctt_status: 3})
         prc = g.query(ProcessingProeng)\
                .filter(ProcessingProeng.id_p == ct.id_p).first()
         atms = get_atoms_contact_proeng(ct.id_ctt)
