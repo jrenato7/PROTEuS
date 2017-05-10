@@ -55,6 +55,7 @@
                         {% from "_formhelpers.html" import render_field %}
                         <form role="form" method="post" enctype="multipart/form-data" class="form-horizontal">
                             {{ render_field(form.pdbfile) }}
+                            {{ render_field(form.chain) }}
                             {{ render_field(form.cutoff) }}
                             {{ render_field(form.name) }}
                             {{ render_field(form.email) }}
