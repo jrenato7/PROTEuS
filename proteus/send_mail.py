@@ -18,7 +18,7 @@ def send_mail_process_start(mail, to, name, pid, pdbid, cuttoff, url):
 <p>Your project has been successfully submitted.</p>
 <p>The paramms of your submission were: PDB ID {3} with cutoff of {4}.</p>
 <p>To follow the job processing, access the following link:
-<a href="{1}/result/{2}">{1}result/{2}</a>.</p>
+<a href="{1}result/{2}">{1}result/{2}</a>.</p>
 <p><strong>You receive this e-mail because it was used as contact
 in PROTEuS tool.</strong></p>
 <p>Best regards, PROTEuS Team.</p>

@@ -260,7 +260,7 @@ def search_mutant_db(num_cores):
           .order_by(ContactProeng.ctt_sequence).first()
     if ct:
         g.query(ContactProeng).filter(ContactProeng.id_ctt == ct.id_ctt)\
-         .update({ContactProeng.ctt_status: 3})
+         .update({ContactProeng.ctt_status: -2})
         prc = g.query(ProcessingProeng)\
                .filter(ProcessingProeng.id_p == ct.id_p).first()
         atms = get_atoms_contact_proeng(ct.id_ctt)
