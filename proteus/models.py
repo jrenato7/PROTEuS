@@ -11,16 +11,13 @@ import copy
 
 class User(Base):
 
-    # Define a User model
     __tablename__ = 'user'
 
     id_u = Column(Integer, primary_key=True)
-    # User Name
     name = Column(String(128), nullable=False)
     # Identification Data: email & password
     email = Column(String(128), nullable=False, unique=True)
     # password = Column(String(192), nullable=False)
-
     # Authorisation Data: role & status
     # role = Column(SmallInteger, nullable=False)
     # status = Column(SmallInteger, nullable=False)
@@ -180,7 +177,6 @@ def store_contacts(gc, id_p):
         rn2_ct = gc.residues[ctt[1]][0]
         ct_name = RESIDUEDICT[rn1_ct] + str(ctt[0]) + '-'
         ct_name += RESIDUEDICT[rn2_ct] + str(ctt[1])
-        # ctt_type = rn1_ct + '-' + rn2_ct
         c = Contact(id_p, ct_name, 0, str(gc.chain.id), ctt[0])
         db_session.add(c)
         db_session.commit()

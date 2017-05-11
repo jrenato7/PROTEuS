@@ -16,8 +16,6 @@ from database import db_session
 from send_mail import send_mail_process_start
 
 
-# BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-
 app = Flask(__name__, static_url_path='/static')
 
 app.config.update(
@@ -129,7 +127,6 @@ def process(url):
 @app.route('/showalign/<url>/<sidechain>', methods=['GET'])
 def showalign(url, sidechain):
     sc = int(sidechain)
-    # load_np_array = np.loads(array_as_str)
     try:
         usp_f = app.config['USER_PROCESS_FOLDER']
         e = url.split('.')
@@ -171,15 +168,3 @@ def showalign(url, sidechain):
         print trace
         data = {'e': 1}
     return json.dumps(data)
-
-
-@app.route('/updatedb/', methods=['GET'])
-def updatedb():
-    ctts = Contact.query.filter(Contact.id_ctt > 0)
-    for ct in ctts:
-        seq = int(ct.ctt_type.split("-")[0][1:])
-        db_session.query(Contact)\
-                  .filter(Contact.id_ctt == ct.id_ctt)\
-                  .update({Contact.ctt_sequence: seq})
-    flash("DataBase ok!")
-    return redirect(url_for('index'))

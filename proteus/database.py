@@ -7,7 +7,9 @@ from sqlalchemy.ext.declarative import declarative_base
 
 dbuser = os.environ.get("WEBDBUSER", "")
 dbpass = os.environ.get("WEBDBPASS", "")
-dbhost = os.environ.get("HOSTDB", "")
+# dbhost = os.environ.get("HOSTDB", "")
+dbhost = os.environ.get("HOSTDBPROENG", "")
+
 mysql_conn = 'mysql://%s:%s@%s/proeng' % (dbuser, dbpass, dbhost)
 engine = create_engine(mysql_conn, convert_unicode=True)
 db_session = scoped_session(sessionmaker(autocommit=False,

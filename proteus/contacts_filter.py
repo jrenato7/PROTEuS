@@ -99,10 +99,6 @@ def get_full_residue(g, r_id, type=0, atms=[], rot='', tran=''):
                    .filter(pam.AtomAlign.res_id == r_id)\
                    .filter(pam.AtomAlign.type == 0)\
                    .order_by(pam.AtomAlign.serial_number)
-    '''else:
-        atms = g.query(pam.AtomAlign)\
-                .filter(pam.AtomAlign.res_id == r_id)\
-                .order_by(pam.AtomAlign.serial_number)'''
     atml = []
     for a in atms:
         atml.append((a.serial_number, parser_atom(a)))
@@ -252,9 +248,11 @@ def is_hydrogen_bond(res_atom_name_1, res_atom_name_2, dtc):
 
 def is_attractive(res_atom_name_1, res_atom_name_2, dtc):
     # type: (str, str, float) -> bool
-    if ((res_atom_name_1 in CATION_FILTER) and (res_atom_name_2 in ANION_FILTER) or
-                (res_atom_name_1 in ANION_FILTER) and (res_atom_name_2 in CATION_FILTER)) and \
-                    dtc < 6.00:
+    if ((res_atom_name_1 in CATION_FILTER) and
+        (res_atom_name_2 in ANION_FILTER) or
+        (res_atom_name_1 in ANION_FILTER) and
+        (res_atom_name_2 in CATION_FILTER)) and \
+       dtc < 6.00:
         return True
     else:
         return False
@@ -262,9 +260,11 @@ def is_attractive(res_atom_name_1, res_atom_name_2, dtc):
 
 def is_repulsive(res_atom_name_1, res_atom_name_2, dtc):
     # type: (str, str, float) -> bool
-    if ((res_atom_name_1 in CATION_FILTER) and (res_atom_name_2 in CATION_FILTER) or
-                (res_atom_name_1 in ANION_FILTER) and (res_atom_name_2 in ANION_FILTER)) and \
-                    dtc < 6.00:
+    if ((res_atom_name_1 in CATION_FILTER) and
+        (res_atom_name_2 in CATION_FILTER) or
+        (res_atom_name_1 in ANION_FILTER) and
+        (res_atom_name_2 in ANION_FILTER)) and \
+       dtc < 6.00:
         return True
     else:
         return False
@@ -272,9 +272,8 @@ def is_repulsive(res_atom_name_1, res_atom_name_2, dtc):
 
 def is_disulphide(res_atom_name_1, res_atom_name_2, dtc):
     # type: (str, str, float) -> bool
-    if res_atom_name_1 in DISULPHIDE_FILTER \
-            and res_atom_name_2 in DISULPHIDE_FILTER and \
-                    dtc < 2.08:
+    if res_atom_name_1 in DISULPHIDE_FILTER and \
+       res_atom_name_2 in DISULPHIDE_FILTER and dtc < 2.08:
         return True
     else:
         return False
