@@ -86,7 +86,7 @@ def result(url):
     except:
         title = "Process not found!"
         subtitle = "The process requested isn't in our database. Please send "
-        subtitle += " an email to jose.renato77@gmail.com with the "
+        subtitle += " an email to proteus.lbs@gmail.com with the "
         subtitle += "URL accessed!"
     return render_template('result.html', **locals())
 
@@ -128,6 +128,7 @@ def process(url):
 
 @app.route('/showalign/<url>', methods=['GET'])
 def showalign(url):
+    # load_np_array = np.loads(array_as_str)
     try:
         usp_f = app.config['USER_PROCESS_FOLDER']
         e = url.split('.')

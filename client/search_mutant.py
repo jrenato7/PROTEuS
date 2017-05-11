@@ -11,12 +11,15 @@ from proeng_model_base import ProcessingProeng, ContactProeng, AtomProeng, \
     AlignProeng, AtomAlignProeng, UserProeng
 from Bio.PDB import Superimposer
 from multiprocessing import Pool
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import pickle as pk
 import traceback
 import copy
 import smtplib
 import sys
 import os
+
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -99,11 +102,12 @@ def update_process():
         total = g.query(func.count(ContactProeng.id_ctt))\
                  .filter(ContactProeng.ctt_status == 0).scalar()
         if total == 0:
-            usr = g.query(UserProeng).filter(UserProeng.id_u == p.id_u).first()
-            #try:
-            send_mail_process_finish(usr.name, usr.email, p.pdbid, p.url)
-            #except:
-            #    print "Error send mail user"
+            usr = g.query(UserProeng).filter(UserProeng.id_u == p.id_user)\
+                   .first()
+            try:
+                send_mail_process_finish(usr.name, usr.email, p.pdbid, p.url)
+            except:
+                print "Error send mail user"
             g.query(ProcessingProeng).filter(ProcessingProeng.id_p == p.id_p)\
              .update({ProcessingProeng.status: 1,
                       ProcessingProeng.notification_user: 1})
@@ -137,8 +141,6 @@ class="rounded mx-auto d-block" >
 
 
 def process_contacts(lst):
-    # for l in lista:
-    # (ct.pdbid, ct.chain, ct.id_ctt, r1, r2, atms)
     cutoff = lst[0]
     tp_ins = lst[1]
     ct_id = lst[2]
@@ -155,30 +157,43 @@ def process_contacts(lst):
         si = Superimposer()
         si.set_atoms(f1, f2)
         si.apply(f2)
+        si.rms
         if si.rms < cutoff:
-            r, t = si.rotran
-            cont += 1
-            new_alg = AlignProeng(ct_id, id_ctt, si.rms, tp_ins,
-                                  pd, ch, r1, r2, r.dumps(), t.dumps())
-            g.add(new_alg)
-            g.commit()
-            id_align = new_alg.id_alg
-            for a_n in f2:
-                coord = "[%.3f; %.3f; %.3f]" % (a_n.coord[0],
-                                                a_n.coord[1],
-                                                a_n.coord[2])
-                atm_new = AtomAlignProeng(id_align, a_n.name,
-                                          a_n.level, a_n.bfactor,
-                                          a_n.occupancy, a_n.element,
-                                          a_n.serial_number,
-                                          a_n.fullname, coord)
-                g.add(atm_new)
-                atm_new = None
-            new_alg = None
-            g.commit()
-
+            eng3 = 'mysql://root:root@127.0.0.1/proeng'
+            engine3 = create_engine(eng3, convert_unicode=True)
+            g3 = scoped_session(sessionmaker(autocommit=False, autoflush=False,
+                                             bind=engine3))
+            row = g3.query(AlignProeng).filter(AlignProeng.id_ctt == ct_id)\
+                    .filter(AlignProeng.al_type == tp_ins).first()
+            if row is None:
+                r, t = si.rotran
+                re = pk.dumps(r).encode('utf-8')
+                te = pk.dumps(t).encode('utf-8')
+                cont += 1
+                new_alg = AlignProeng(ct_id, id_ctt, si.rms, tp_ins,
+                                      pd, ch, r1, r2, re, te)
+                g3.add(new_alg)
+                g3.commit()
+                id_align = new_alg.id_alg
+                for a_n in f2:
+                    coord = "[%.3f; %.3f; %.3f]" % (a_n.coord[0],
+                                                    a_n.coord[1],
+                                                    a_n.coord[2])
+                    atm_new = AtomAlignProeng(id_align, a_n.name,
+                                              a_n.level, a_n.bfactor,
+                                              a_n.occupancy, a_n.element,
+                                              a_n.serial_number,
+                                              a_n.fullname, coord)
+                    g3.add(atm_new)
+                    atm_new = None
+                new_alg = None
+                g3.commit()
+            else:
+                cont += 1
+            g3.close()
+            engine3 = None
+            eng3 = None
             update_contact(ct_id)
-
     return cont
 
 
@@ -188,7 +203,6 @@ def seach_mutant_aux(elm, num_cores):
     trp = elm[1].split("-")  # R282-E286
     tp = RESIDUEDICT2[trp[0][0]] + '-' + RESIDUEDICT2[trp[1][0]]
     ct_id = elm[2]
-    # f1 = copy.deepcopy(elm[3])
     cont = 0
     for b in dbs_up:
         for a in RESIDUELIST:
@@ -205,7 +219,8 @@ def seach_mutant_aux(elm, num_cores):
             total_align = gf.query(func.count(ResidueContactSearchBase))\
                             .filter(ResidueContactSearchBase.ctt_type == tp2)\
                             .scalar()
-
+            if total_align == 0:
+                continue
             num_proc = num_cores * 10
             pages = total_align / num_proc
 
@@ -232,13 +247,12 @@ def seach_mutant_aux(elm, num_cores):
                     cont += 0
                 if t != 0:
                     break
-
     if cont == 0:
-        g.query(ContactProeng).filter(ContactProeng.id_ctt == ct_id)\
-         .update({ContactProeng.ctt_status: -1})
+        a = g.query(ContactProeng).filter(ContactProeng.id_ctt == ct_id)\
+             .update({ContactProeng.ctt_status: -1})
     else:
-        g.query(ContactProeng).filter(ContactProeng.id_ctt == ct_id)\
-         .update({ContactProeng.ctt_status: 2})
+        a = g.query(ContactProeng).filter(ContactProeng.id_ctt == ct_id)\
+             .update({ContactProeng.ctt_status: 2})
 
 
 def search_mutant_db(num_cores):
@@ -260,4 +274,5 @@ def search_mutant_db(num_cores):
 
 if __name__ == '__main__':
 
-    search_mutant_db(8)
+    search_mutant_db(20)
+    g.close()
