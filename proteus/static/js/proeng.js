@@ -65,7 +65,7 @@ proEngApp.controller('proEngController', function($scope, $http, $location, $int
         $anchorScroll();
     };
 
-    $scope.show = function ($id_ali, $w, $m1, $m2) {
+    $scope.show = function ($id_ali, $w, $m1, $m2, $sc = 0) {
     var modalInstance = $uibModal.open({
       animation: true,
       templateUrl: 'myModalContent.html',
@@ -77,6 +77,9 @@ proEngApp.controller('proEngController', function($scope, $http, $location, $int
         },
         cttypes: function(){
             return [$w, $m1 +'-' + $m2];
+        },
+        sc: function(){
+            return $sc;
         }
       }
     });
@@ -90,10 +93,17 @@ proEngApp.controller('proEngController', function($scope, $http, $location, $int
 
 });
 
-proEngApp.controller('PopulateModal', function ($scope, $uibModalInstance, $http, $log, idal, cttypes) {
+proEngApp.controller('PopulateModal', function ($scope, $uibModalInstance, $http, $log, $uibModal, idal, cttypes, sc) {
+    //$id_ali, $w, $m1, $m2, $sc = 0
+    $scope.idal = idal[0][0];
+    $scope.w = cttypes[0][0][0];
+    var mtt = cttypes[1].split("-");
+    $scope.m1 = mtt[0];
+    $scope.m2 = mtt[1];
+    $scope.sc = sc == 0 ? 1 : 0;
     $scope.wild = cttypes[0][0][0];
     $scope.mutation = cttypes[1];
-    $http.get("/showalign/" + idal).success(function(data){
+    $http.get("/showalign/" + idal + "/" + sc).success(function(data){
         if (data['e'] == 1){
             $scope.alignok = 1;
         } else{
@@ -131,4 +141,30 @@ proEngApp.controller('PopulateModal', function ($scope, $uibModalInstance, $http
     /*$scope.toggleLayout = function ($lyt) {
         $scope.style = $lyt;
     };*/
+    $scope.show = function ($id_ali, $w, $m1, $m2, $sc = 0) {
+        $uibModalInstance.dismiss('cancel');
+        var modalInstance = $uibModal.open({
+          animation: true,
+          templateUrl: 'myModalContent.html',
+          controller: 'PopulateModal',
+          size: 'lg',
+          resolve: {
+            idal: function () {
+              return $id_ali;
+            },
+            cttypes: function(){
+                return [$w, $m1 +'-' + $m2];
+            },
+            sc: function(){
+                return $sc;
+            }
+          }
+        });
+
+    /*modalInstance.result.then(function (selectedItem) {
+      $scope.selected = selectedItem;
+    }, function () {
+      $log.info('Modal dismissed at: ' + new Date());
+    });*/
+  };
 });

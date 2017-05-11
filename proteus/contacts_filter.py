@@ -10,6 +10,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 import db_protein_align_model as pam
 import numpy as np
 import os
+import traceback
 
 
 RESIDUELIST = ['ALA', 'ARG', 'ASP', 'ASN', 'CYS', 'GLU', 'GLN', 'GLY', 'HIS',
@@ -83,7 +84,7 @@ def parser_atom(a):
     return atm
 
 
-def get_full_residue(g, r_id, type=1, atms=[]):
+def get_full_residue(g, r_id, type=0, atms=[], rot='', tran=''):
     """
     :param r_id: id of residue
     :param type: Atom.type: 1 = main chain, 0 = side chain
@@ -92,21 +93,31 @@ def get_full_residue(g, r_id, type=1, atms=[]):
     res = g.query(pam.ResidueAlign)\
            .filter(pam.ResidueAlign.res_id == r_id)\
            .first()
-    '''if type == 1:
-        atms = g.query(pam.AtomAlign)\
-                .filter(pam.AtomAlign.res_id == r_id)\
-                .filter(pam.AtomAlign.type == type)\
-                .order_by(pam.AtomAlign.serial_number)
-    else:
+    atms_sc = None
+    if type != 0:
+        atms_sc = g.query(pam.AtomAlign)\
+                   .filter(pam.AtomAlign.res_id == r_id)\
+                   .filter(pam.AtomAlign.type == 0)\
+                   .order_by(pam.AtomAlign.serial_number)
+    '''else:
         atms = g.query(pam.AtomAlign)\
                 .filter(pam.AtomAlign.res_id == r_id)\
                 .order_by(pam.AtomAlign.serial_number)'''
     atml = []
     for a in atms:
-        atml.append(parser_atom(a))
+        atml.append((a.serial_number, parser_atom(a)))
+    if atms_sc is not None:
+        for a in atms_sc:
+            am = parser_atom(a)
+            rotation = np.loads(str(rot))
+            translation = np.loads(str(tran))
+            am.transform(rotation, translation)
+            atml.append((a.serial_number, am))
     pos = int(res.position)
     res_return = Residue((' ', pos, ' '),
                          RESIDUEDICT2[res.name], pos)
+    atml = sorted(atml)
+    atml = [a[1] for a in atml]
     for a in atml:
         res_return.add(a)
 
@@ -128,17 +139,21 @@ def create_mutate_pdb(rc_id, out_file, tp=0, atms=[]):
           .first()
     try:
         chain = Chain(str(ch.name))
-        chain.add(get_full_residue(g, rc.r1_prv, atms=atms[0:4]))
-        chain.add(get_full_residue(g, rc.r1_id, tp, atms=atms[4:8]))
-        chain.add(get_full_residue(g, rc.r1_nxt, atms=atms[8:12]))
-        chain.add(get_full_residue(g, rc.r2_prv, atms=atms[12:16]))
-        chain.add(get_full_residue(g, rc.r2_id, tp, atms=atms[16:20]))
-        chain.add(get_full_residue(g, rc.r2_nxt, atms=atms[20:24]))
+        chain.add(get_full_residue(g, rc.r1_prv, atms=atms[0][0:4]))
+        chain.add(get_full_residue(g, rc.r1_id, tp, atms=atms[0][4:8],
+                                   rot=atms[1], tran=atms[2]))
+        chain.add(get_full_residue(g, rc.r1_nxt, atms=atms[0][8:12]))
+        chain.add(get_full_residue(g, rc.r2_prv, atms=atms[0][12:16]))
+        chain.add(get_full_residue(g, rc.r2_id, tp, atms=atms[0][16:20],
+                                   rot=atms[1], tran=atms[2]))
+        chain.add(get_full_residue(g, rc.r2_nxt, atms=atms[0][20:24]))
 
         w = PDBIO()
         w.set_structure(chain)
         w.save(out_file)
     except:
+        trace = traceback.format_exc()
+        print trace
         out_file = None
     g.close()
     return out_file

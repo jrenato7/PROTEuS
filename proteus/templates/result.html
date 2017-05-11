@@ -8,18 +8,18 @@
     <meta name="author" content="jose.renato77@gmail.com">
     <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.png') }}" sizes="32x32" type="image/png"/>
     <title>PROTEuS | PROTein Engineering Supporter</title>
-    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="http://getbootstrap.com/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-    <link href="{{ url_for('static', filename='css/ie10-viewport-bug-workaround.css') }}" rel="stylesheet">
+    <link href="http://getbootstrap.com/assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet">
 
     <!-- Custom styles for this template -->
     <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='js/angularjs/ui-bootstrap-custom-build/ui-bootstrap-custom-1.1.1-csp.css') }}" rel="stylesheet">
 
     <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
-    <!--[if lt IE 9]><script src={{ url_for('static', filename='static/js/ie8-responsive-file-warning.js') }}></script><![endif]-->
-    <script src="{{ url_for('static', filename='js/ie-emulation-modes-warning.js') }}"></script>
+    <!--[if lt IE 9]><script src='http://getbootstrap.com/assets/js/ie8-responsive-file-warning.js') }}></script><![endif]-->
+    <script src="http://getbootstrap.com/assets/js/ie-emulation-modes-warning.js"></script>
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
@@ -150,31 +150,27 @@
             </div>
 
     <div class="modal-footer">
+        <button class="btn btn-success" type="button" ng-click="show([[idal]], [[w]], [[m1]], [[m2]], [[sc]])">Side chain</button>
         <a href="[[download]]" class="btn btn-primary" type="button">Download</a>
         <button class="btn btn-danger" type="button" ng-click="cancel()">Close</button>
     </div>
 </script>
 
 
-
-<script src="{{ url_for('static', filename='js/angularjs/1.4.9/angular.min.js') }}"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.9/angular.min.js"></script>
 <script src="{{ url_for('static', filename='js/angularjs/ui-bootstrap-custom-build/ui-bootstrap-custom-1.1.1.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/angularjs/ui-bootstrap-custom-build/ui-bootstrap-custom-tpls-1.1.1.min.js') }}"></script>
 <!-- Bootstrap core JavaScript
 ================================================== -->
 <!-- Placed at the end of the document so the pages load faster -->
-<script src="{{ url_for('static', filename='js/jquery/1.12.4/jquery.min.js') }}"></script>
-<!--<script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>-->
-<script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="http://getbootstrap.com/dist/js/bootstrap.min.js"></script>
 <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-<script src="{{ url_for('static', filename='js/ie10-viewport-bug-workaround.js') }}"></script>
-<script src="{{ url_for('static', filename='js/3Dmol-min.js') }}"></script>
+<script src="http://getbootstrap.com/assets/js/ie10-viewport-bug-workaround.js"></script>
+<script src="http://3dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
 
 <script src="{{ url_for('static', filename='js/proeng.js') }}"></script>
 
-<script>
-
-</script>
     <div class="col-md-12 alert alert-warning msg" role="alert">
         <p class="text-center">
             <strong>You can access this page any time using this link: <a href='[[linkacess]]'>[[linkacess]]</a> </strong>

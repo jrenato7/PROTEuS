@@ -126,8 +126,9 @@ def process(url):
     return json.dumps(data)
 
 
-@app.route('/showalign/<url>', methods=['GET'])
-def showalign(url):
+@app.route('/showalign/<url>/<sidechain>', methods=['GET'])
+def showalign(url, sidechain):
+    sc = int(sidechain)
     # load_np_array = np.loads(array_as_str)
     try:
         usp_f = app.config['USER_PROCESS_FOLDER']
@@ -153,13 +154,16 @@ def showalign(url):
         usr_f = get_user_folder(usr, usp_f)
         prf = get_user_process_folder(usr_f, prc.url)
 
-        f1 = get_pdb_file(prf, ctt.id_ctt, ctt.ctt_type + '.pdb')
-        pdb_m = str(aln.id_ctt) + aln.r1 + aln.r2 + '.pdb'
-        n_ats = AtomAlignProeng.query\
-                               .filter(AtomAlignProeng.id_align == aln.id_alg)\
-                               .order_by(AtomAlignProeng.serial_number)
-        print "F2: ", prf, aln.id_ctt_search_db, pdb_m
-        f2 = get_pdb_file(prf, aln.id_ctt_search_db, pdb_m, 'm', atms=n_ats)
+        f1 = get_pdb_file(prf, ctt.id_ctt, ctt.ctt_type + sidechain + '.pdb',
+                          mc=sc)
+
+        pdb_m = str(aln.id_ctt) + aln.r1 + aln.r2 + sidechain + '.pdb'
+        n_ats = AtomAlignProeng.query.filter(
+            AtomAlignProeng.id_align == aln.id_alg)\
+            .order_by(AtomAlignProeng.serial_number)
+        atms = [a for a in n_ats]
+        f2 = get_pdb_file(prf, aln.id_ctt_search_db, pdb_m, 'm', mc=sc,
+                          atms=(atms, aln.rotation, aln.translation))
 
         data = {'e': 0, 'f1': f1, 'f2': f2}
     except:

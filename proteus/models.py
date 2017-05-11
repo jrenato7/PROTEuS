@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 from database import db_session, Base
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, Text
 from contacts_filter import *
 import hashlib
 import datetime
@@ -118,8 +118,11 @@ class AlignProeng(Base):
     chain = Column(String(4))
     r1 = Column(String(7))
     r2 = Column(String(7))
+    rotation = Column(Text)
+    translation = Column(Text)
 
-    def __init__(self, id_ctt, id_rc, score, type, pdbid, chain, r1, r2):
+    def __init__(self, id_ctt, id_rc, score, type, pdbid, chain, r1, r2,
+                 r='', t=''):
         self.id_ctt = id_ctt
         self.id_ctt_search_db = id_rc
         self.al_score = score
@@ -128,6 +131,8 @@ class AlignProeng(Base):
         self.chain = chain
         self.r1 = r1
         self.r2 = r2
+        self.rotation = r
+        self.translation = t
 
 
 class AtomAlignProeng(Base):
@@ -220,32 +225,40 @@ def get_user_process_folder(uf, prc):
 
 def get_pdb_file(prf, ctt_id, pdb, pdb_type='w', mc=0, atms=None):
     prf = os.path.abspath(prf)
-    # pdb = ctt.ctt_type + '.pdb'
     cttf = os.path.join(prf, pdb)
     elm = prf.split('/')
     fr = '/static/user_aligns/%s/%s/%s' % (elm[-2], elm[-1], pdb)
-    # '/static/user_aligns/1_jose.renato77/p7 /ctt_wilde.pdb',
     if not os.path.exists(cttf):
         if pdb_type == 'w':
-            create_pdb_wild(cttf, ctt_id)
+            create_pdb_wild(cttf, ctt_id, mc)
         else:
-            print "F2 Novo: ", ctt_id, cttf, mc, atms
             create_mutate_pdb(ctt_id, cttf, mc, atms)
     return fr
 
 
-def create_pdb_wild(out_file, ct_id):
-    ats = AtomProeng.query.filter(AtomProeng.id_ctt == ct_id)\
-                          .order_by(AtomProeng.serial_number)
+def create_pdb_wild(out_file, ct_id, sc=0):
+    if sc == 0:
+        ats = AtomProeng.query.filter(AtomProeng.id_ctt == ct_id)\
+                              .filter(AtomProeng.type == 1)\
+                              .order_by(AtomProeng.serial_number)
+    else:
+        ats = AtomProeng.query.filter(AtomProeng.id_ctt == ct_id)\
+                              .order_by(AtomProeng.serial_number)
     ch = Chain('A')
     atms = [a for a in ats]
-    for res in range(len(atms) / 4):
-        res_return = Residue((' ', res + 1, ' '), 'NNN', res + 1)
-        inic = res * 4
-        atml = [parser_atom(atm) for atm in atms[inic:inic + 4]]
-        for a in atml:
-            res_return.add(a)
-        ch.add(res_return)
+    if len(atms) == 0:
+        return None
+    r_ret = None  # residue return
+    r_num = 0     # residue number
+    for a in atms:
+        patm = parser_atom(a)
+        if a.name == 'N':
+            if r_num > 0:
+                ch.add(r_ret)
+            r_num += 1
+            r_ret = Residue((' ', r_num, ' '), 'NNN', r_num)
+        r_ret.add(patm)
+    ch.add(r_ret)
     w = PDBIO()
     w.set_structure(ch)
     w.save(out_file)
