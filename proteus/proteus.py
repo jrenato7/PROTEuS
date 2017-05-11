@@ -3,8 +3,7 @@
 import os
 import traceback
 from flask import Flask
-from flask import request, render_template, flash, redirect, url_for, \
-    abort, json
+from flask import request, render_template, flash, redirect, url_for, json
 from flask_mail import Mail
 from werkzeug.utils import secure_filename
 from jinja2 import TemplateNotFound
@@ -16,8 +15,6 @@ from models import Processing, Contact, get_user, \
 from database import db_session
 from send_mail import send_mail_process_start
 
-
-# BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__, static_url_path='/static')
 
@@ -60,7 +57,9 @@ def index():
             prc = Processing(user_id, pdb_name, cutoff, url)
             db_session.add(prc)
             db_session.commit()
-            gc = GenerateContactsPdbFile(fs)
+            gc = GenerateContactsPdbFile(fs, chain=form.chain.data)
+            for m in gc.messages:
+                flash(m)
             store_contacts(gc, prc.id_p)
             send_mail_process_start(mail, user.email, user.name, prc.url,
                                     prc.pdbid, prc.cutoff, request.url)
@@ -85,7 +84,7 @@ def result(url):
     except:
         title = "Process not found!"
         subtitle = "The process requested isn't in our database. Please send "
-        subtitle += " an email to jose.renato77@gmail.com with the "
+        subtitle += " an email to proteus.lbs@gmail.com with the "
         subtitle += "URL accessed!"
     return render_template('result.html', **locals())
 
@@ -125,8 +124,9 @@ def process(url):
     return json.dumps(data)
 
 
-@app.route('/showalign/<url>', methods=['GET'])
-def showalign(url):
+@app.route('/showalign/<url>/<sidechain>', methods=['GET'])
+def showalign(url, sidechain):
+    sc = int(sidechain)
     try:
         usp_f = app.config['USER_PROCESS_FOLDER']
         e = url.split('.')
@@ -151,13 +151,16 @@ def showalign(url):
         usr_f = get_user_folder(usr, usp_f)
         prf = get_user_process_folder(usr_f, prc.url)
 
-        f1 = get_pdb_file(prf, ctt.id_ctt, ctt.ctt_type + '.pdb')
-        pdb_m = str(aln.id_ctt) + aln.r1 + aln.r2 + '.pdb'
-        n_ats = AtomAlignProeng.query\
-                               .filter(AtomAlignProeng.id_align == aln.id_alg)\
-                               .order_by(AtomAlignProeng.serial_number)
-        print "F2: ", prf, aln.id_ctt_search_db, pdb_m
-        f2 = get_pdb_file(prf, aln.id_ctt_search_db, pdb_m, 'm', atms=n_ats)
+        f1 = get_pdb_file(prf, ctt.id_ctt, ctt.ctt_type + sidechain + '.pdb',
+                          mc=sc)
+
+        pdb_m = str(aln.id_ctt) + aln.r1 + aln.r2 + sidechain + '.pdb'
+        n_ats = AtomAlignProeng.query.filter(
+            AtomAlignProeng.id_align == aln.id_alg)\
+            .order_by(AtomAlignProeng.serial_number)
+        atms = [a for a in n_ats]
+        f2 = get_pdb_file(prf, aln.id_ctt_search_db, pdb_m, 'm', mc=sc,
+                          atms=(atms, aln.rotation, aln.translation))
 
         data = {'e': 0, 'f1': f1, 'f2': f2}
     except:
@@ -165,15 +168,3 @@ def showalign(url):
         print trace
         data = {'e': 1}
     return json.dumps(data)
-
-
-@app.route('/updatedb/', methods=['GET'])
-def updatedb():
-    ctts = Contact.query.filter(Contact.id_ctt > 0)
-    for ct in ctts:
-        seq = int(ct.ctt_type.split("-")[0][1:])
-        db_session.query(Contact)\
-                  .filter(Contact.id_ctt == ct.id_ctt)\
-                  .update({Contact.ctt_sequence: seq})
-    flash("DataBase ok!")
-    return redirect(url_for('index'))

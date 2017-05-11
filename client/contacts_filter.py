@@ -91,8 +91,9 @@ def connect_dbs(graphs, dbs, ip_base, passwd_base, user):
 def get_available_dbs(graphs={}):
     # type: () -> dict
     # Return the available contacts databases (C.D.N.s)
-    dbs_101 = ['arg', 'asn', 'asp', 'cys', 'gln', 'glu', 'his', 'lys', 'ser',
-               'thr', 'trp', 'tyr']
+    #dbs_101 = ['arg', 'asn', 'asp', 'cys', 'gln', 'glu', 'his', 'lys', 'ser',
+    #           'thr', 'trp', 'tyr']
+    dbs_101 = ['cys']
     # dbs_101 = ['thr']
     ip_101 = "127.0.0.1"  # '150.164.203.92'
     passwd_101 = "root"  # 'rootlbspdbc0nt1cts'

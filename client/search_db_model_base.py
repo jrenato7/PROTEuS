@@ -18,9 +18,9 @@ class ResidueContactSearchBase(Base):
     r1_position = Column(Integer, nullable=False)
     r2_name = Column(String(1), nullable=False)
     r2_position = Column(Integer, nullable=False)
-    dca = Column(Float, nullable=False)
+    # dca = Column(Float, nullable=False)
 
-    def __init__(self, pdb, chain, tp, r1n, r1p, r2n, r2p, dca):
+    def __init__(self, pdb, chain, tp, r1n, r1p, r2n, r2p, dca=0):
         self.ctt_pdbid = pdb
         self.ctt_chain = chain
         self.ctt_type = tp
@@ -28,7 +28,7 @@ class ResidueContactSearchBase(Base):
         self.r1_position = r1p
         self.r2_name = r2n
         self.r2_position = r2p
-        self.dca = dca
+        # self.dca = dca
 
 
 class AtomSearchBase(Base):

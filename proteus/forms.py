@@ -1,5 +1,6 @@
 import os
 
+from flask import flash
 from wtforms import Form, StringField, FileField, FloatField, validators,\
     ValidationError
 import re
@@ -19,6 +20,9 @@ class UploadForm(Form):
                         [validators.Email('Email address is not valid!'),
                          validators
                          .DataRequired(message='Forgot your email address?')])
+    chain = StringField('Chain', [validators.Length(max=2)],
+                        render_kw={'placeholder': 'A', 'class': '',
+                        'value': 'A'})
     '''pdbfile = FileField('PDB File', [validators
                                      .Regexp(u'([0-9A-Za-z0-9])*\.pdb$')])'''
     pdbfile = FileField('PDB File')

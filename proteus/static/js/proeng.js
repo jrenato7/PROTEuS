@@ -7,7 +7,20 @@ proEngApp.config(function($interpolateProvider){
 
 proEngApp.controller('proEngController', function($scope, $http, $location, $interval, $log, $uibModal, $anchorScroll){
     //$scope.linkacess = $location.absUrl();
-    $scope.reload = function () {
+    var repete;
+    $scope.start = function(){
+        // stops any running interval to avoid two intervals running at the same time
+        $scope.stop();
+        repete =  $interval(reload, 5000);
+    };
+
+    $scope.stop = function(){
+        $interval.cancel(repete);
+    };
+
+    $scope.start();
+
+    function reload() {
         var url = $location.absUrl().split("/");
         var id_p = url[4].slice(0,64);
         $scope.linkacess = 'http://' + url[2] + '/' + url[3] + '/' + id_p ;
@@ -16,7 +29,6 @@ proEngApp.controller('proEngController', function($scope, $http, $location, $int
             var contacts = data['contacts'];
             var cttl = new Array();
             for(ct in contacts){
-
                 tt = contacts[ct].title.split('-');
                 nt = tt[0] + '/' + tt[1];
                 var cts = new Array();
@@ -38,16 +50,17 @@ proEngApp.controller('proEngController', function($scope, $http, $location, $int
                 }
                 cttl.push({site: nt, mutations: cts});
             }
+
             if(cttl.length > 0)
                 $scope.cttlok = 1;
+
             $scope.contactsList = cttl;
             $scope.contacts = contacts;
+
             if(data['ps'] == 1){
                 $scope.p_status = data['ps'];
+                $scope.stop();
             };
-
-
-
 
             /*if(data['contacts'].length == 0){
                 console.log("none");
@@ -57,15 +70,15 @@ proEngApp.controller('proEngController', function($scope, $http, $location, $int
             };*/
         });
     };
-    $scope.reload();
-    $interval($scope.reload, 500000);
+
+    // $scope.reload();
 
     $scope.scrollTo = function (id) {
         $location.hash(id);
         $anchorScroll();
     };
 
-    $scope.show = function ($id_ali, $w, $m1, $m2) {
+    $scope.show = function ($id_ali, $w, $m1, $m2, $sc = 0) {
     var modalInstance = $uibModal.open({
       animation: true,
       templateUrl: 'myModalContent.html',
@@ -77,23 +90,26 @@ proEngApp.controller('proEngController', function($scope, $http, $location, $int
         },
         cttypes: function(){
             return [$w, $m1 +'-' + $m2];
+        },
+        sc: function(){
+            return $sc;
         }
       }
     });
-
-    /*modalInstance.result.then(function (selectedItem) {
-      $scope.selected = selectedItem;
-    }, function () {
-      $log.info('Modal dismissed at: ' + new Date());
-    });*/
   };
 
 });
 
-proEngApp.controller('PopulateModal', function ($scope, $uibModalInstance, $http, $log, idal, cttypes) {
+proEngApp.controller('PopulateModal', function ($scope, $uibModalInstance, $http, $log, $uibModal, idal, cttypes, sc) {
+    $scope.idal = idal[0][0];
+    $scope.w = cttypes[0][0][0];
+    var mtt = cttypes[1].split("-");
+    $scope.m1 = mtt[0];
+    $scope.m2 = mtt[1];
+    $scope.sc = sc == 0 ? 1 : 0;
     $scope.wild = cttypes[0][0][0];
     $scope.mutation = cttypes[1];
-    $http.get("/showalign/" + idal).success(function(data){
+    $http.get("/showalign/" + idal + "/" + sc).success(function(data){
         if (data['e'] == 1){
             $scope.alignok = 1;
         } else{
@@ -121,14 +137,28 @@ proEngApp.controller('PopulateModal', function ($scope, $uibModalInstance, $http
 
         });
 
-    /*$scope.ok = function () {
-        $uibModalInstance.close($scope.selected.item);
-    };*/
-
     $scope.cancel = function () {
         $uibModalInstance.dismiss('cancel');
     };
-    /*$scope.toggleLayout = function ($lyt) {
-        $scope.style = $lyt;
-    };*/
+
+    $scope.show = function ($id_ali, $w, $m1, $m2, $sc = 0) {
+        $uibModalInstance.dismiss('cancel');
+        var modalInstance = $uibModal.open({
+          animation: true,
+          templateUrl: 'myModalContent.html',
+          controller: 'PopulateModal',
+          size: 'lg',
+          resolve: {
+            idal: function () {
+              return $id_ali;
+            },
+            cttypes: function(){
+                return [$w, $m1 +'-' + $m2];
+            },
+            sc: function(){
+                return $sc;
+            }
+          }
+        });
+  };
 });

@@ -9,20 +9,22 @@ from contacts_filter import *
 
 class GenerateContactsPdbFile:
 
-    def __init__(self, pdb_file, neighborhood_size=1):
+    def __init__(self, pdb_file, neighborhood_size=1, chain='A'):
         # type: (str, int) -> GenerateContactsPdbFile
         self.pdb_id = treat_pdb_id(pdb_file)
         self.pdb_file = self.parser_pdb(pdb_file)
         self.nsize = neighborhood_size
+        self.chain = chain
+        self.messages = []
 
         # Residues with neighborhood measure equal to neighborhood_size
-        self.res_full_neighbours = [] # [20, 32, 35, 187,...]
+        self.res_full_neighbours = []  # [20, 32, 35, 187,...]
 
         # Ids of residues that are in contact:
-        self.contacts = [] # [(49, 178), (20, 78), ...]
+        self.contacts = []  # [(49, 178), (20, 78), ...]
         # dict of residues where the keys is the residue id and the
         # value is a tuple with residue name and  the atoms of main chain.
-        self.residues = {} # {10: ('SER', [Atom, Atom, Atom, Atom]), ...}
+        self.residues = {}  # {10: ('SER', [Atom, Atom, Atom, Atom]), ...}
         self.set_atoms_of_residue()
         self.set_residue_full_neighborhood()
         self.set_contacts()
@@ -75,14 +77,20 @@ class GenerateContactsPdbFile:
     def set_atoms_of_residue(self):
         """
             Create a dict of residues where the keys is the residue id and the
-            value is a tuple with residue name and  the atoms of main chain.
-            self.residues = {10: ('SER', [Atom, Atom, Atom, Atom]),
+            value is a tuple with residue name and  all atoms
+            self.residues = {10: ('SER', [Atom, Atom, Atom, ..., Atom]),
             11: ('HIS', [Atom, Atom, Atom, Atom]), 12: ('CYS',
              [Atom, Atom, Atom, Atom])}
         """
-        chain = self.pdb_file[0]
-        self.chain = str(chain.id)
-        for res in chain.get_residues():  # chain:
+        for c in self.pdb_file.get_chains():
+            if c.id == self.chain:
+                self.chain = c
+                break
+        if isinstance(self.chain, basestring):
+            msg = 'Chain {} not found! We used the model 0 instead.'
+            self.messages.append(msg.format(self.chain))
+            self.chain = self.pdb_file[0]
+        for res in self.chain.get_residues():  # chain:
             rn = res.id[1]
             if res.resname not in RESIDUELIST:
                 continue
@@ -98,14 +106,16 @@ class GenerateContactsPdbFile:
                         raise
                 else:
                     at = get_atom_dict(adc)
-                if at is None or at['name'].find('H') == 0 or \
-                                at['name'] not in MAINCHAIN:
+                if at is None or at['name'].find('H') == 0:
+                                # or \
+                                # at['name'] not in MAINCHAIN:
                     continue
                 # atoms.append(parser_atom(at))
                 atoms.append(at)
-            if len(atoms) == 4:
+            '''if len(atoms) == 4:
                 # self.residues[rn] = (RESIDUEDICT[res.resname], atoms)
-                self.residues[rn] = (res.resname, atoms)
+                self.residues[rn] = (res.resname, atoms)'''
+            self.residues[rn] = (res.resname, atoms)
 
     def set_contacts(self):
         """
@@ -114,7 +124,7 @@ class GenerateContactsPdbFile:
             id residue 2), (id residue 1, id residue 2), ...].
             All those contacts will be search in available DBs.
         """
-        model0_atoms = self.pdb_file[0].get_atoms()
+        model0_atoms = self.chain.get_atoms()
         atoms_pairs = NeighborSearch(list(model0_atoms)).search_all(6.1)
 
         for atom_pair in atoms_pairs:
@@ -128,9 +138,11 @@ class GenerateContactsPdbFile:
             res_name2 = at2.parent.get_resname().rstrip().lstrip()
             atm_name1 = at1.get_fullname().rstrip().lstrip()
             atm_name2 = at2.get_fullname().rstrip().lstrip()
-            res_id1 = at1.parent.get_id()[1] # res number
-            res_id2 = at2.parent.get_id()[1] # res number
+            res_id1 = at1.parent.get_id()[1]  # res number
+            res_id2 = at2.parent.get_id()[1]  # res number
             if res_id1 == res_id2:
+                continue
+            if (res_id1 == res_id2 + 3) or (res_id2 == res_id1 + 3):
                 continue
             if self.check_neighborhood(res_id1, res_id2) != 6:
                 continue
@@ -138,17 +150,14 @@ class GenerateContactsPdbFile:
                     not self.has_neighborhood(res_id2):
                 continue
             if res_name1 in RESIDUELIST and res_name2 in RESIDUELIST and \
-                            atm_name1 in ATOMLIST and atm_name2 in ATOMLIST:
+               atm_name1 == 'CA' and atm_name2 == 'CA':
                 dstc = distance.euclidean(at1.coord, at2.coord)
-                res_atm_1 = res_name1 + atm_name1
-                res_atm_2 = res_name2 + atm_name2
-                if (is_hydrogen_bond(res_atm_1, res_atm_2, dstc) or
-                        is_attractive(res_atm_1, res_atm_2, dstc) or
-                        is_repulsive(res_atm_1, res_atm_2, dstc) or
-                        is_disulphide(res_atm_1, res_atm_2, dstc)):
-                    if res_id1 < res_id2 and (res_id1, res_id2) not in self.contacts:
+                if 3.35 <= dstc <= 16.4:
+                    if res_id1 < res_id2 and (res_id1, res_id2) \
+                       not in self.contacts:
                         self.contacts.append((res_id1, res_id2))
-                    elif res_id2 < res_id1 and (res_id2, res_id1) not in self.contacts:
+                    elif res_id2 < res_id1 and (res_id2, res_id1) \
+                            not in self.contacts:
                         self.contacts.append((res_id2, res_id1))
                     else:
                         continue
@@ -161,7 +170,7 @@ class GenerateContactsPdbFile:
 
 
 if __name__ == "__main__":
-    gc = GenerateContactsPdbFile('upload/1bga.pdb')
+    gc = GenerateContactsPdbFile('upload/4iid.pdb')
     for ctc in gc.contacts:
         print (ctc)
         print(gc.residues[ctc[0]][0], gc.residues[ctc[1]][0])
