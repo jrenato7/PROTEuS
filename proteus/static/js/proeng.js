@@ -26,6 +26,7 @@ proEngApp.controller('proEngController', function($scope, $http, $location, $int
         $scope.linkacess = 'http://' + url[2] + '/' + url[3] + '/' + id_p ;
         $http.get("/process/" + id_p).success(function(data){
             //$scope.contacts = data['contacts'];
+            $scope.mutationsfound = data['mutation_found'];
             var contacts = data['contacts'];
             var cttl = new Array();
             for(ct in contacts){

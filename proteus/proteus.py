@@ -105,6 +105,7 @@ def process(url):
                                     ).order_by(Contact.ctt_sequence)
         data = {'ps': prc.status}
         data['contacts'] = []
+        mut_found = 0
         for ct in ctts:
             c = {'id': ct.id_ctt, 'title': ct.ctt_type}
             alg = AlignProeng.query\
@@ -112,6 +113,7 @@ def process(url):
                              .order_by(AlignProeng.al_score)
             contacts = []
             for al in alg:
+                mut_found += 1
                 alid = prc.url + '.' + str(ct.id_ctt) + '.' + str(al.id_alg)
                 a = {'type': al.al_type, 'pdbid': al.pdbid, 'chain': al.chain,
                      'r1': al.r1, 'r2': al.r2, 'score': al.al_score,
@@ -119,6 +121,7 @@ def process(url):
                 contacts.append(a)
             c['contacts'] = contacts
             data['contacts'].append(c)
+        data['mutation_found'] = mut_found
     except:
         data = {}
     return json.dumps(data)
