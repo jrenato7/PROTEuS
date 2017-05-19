@@ -95,9 +95,9 @@ def get_available_dbs(graphs={}):
     #           'thr', 'trp', 'tyr']
     dbs_101 = ['cys']
     # dbs_101 = ['thr']
-    ip_101 = "127.0.0.1"  # '150.164.203.92'
-    passwd_101 = "root"  # 'rootlbspdbc0nt1cts'
-    user_101 = "root"  # 'prtaln'
+    ip_101 = "127.0.0.1"
+    passwd_101 = "root"
+    user_101 = "root"
     graphs = connect_dbs(graphs, dbs_101, ip_101, passwd_101, user_101)
     return graphs
 
